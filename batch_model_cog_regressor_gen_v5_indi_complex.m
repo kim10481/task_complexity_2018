@@ -379,15 +379,6 @@ if(option_optimizing_model==0)
 end
 
 if(option_optimizing_model==1)
-    % ## (way2-batch) optimizing for *all* subjects and plug the result into each SBJ structure
-    % [0] retrieve intial configuration for skipping pre-training
-    %     SBJ_keep=SBJ;
-    %     load_file_name=['SBJ_structure(backup,batch,Oct30_4).mat'];
-    %     eval(['load ' save_path_result load_file_name]);
-    %     for ff1=1:1:length(SBJ_keep)
-    %         SBJ_keep{1,ff1}.init_state_fwd=SBJ{1,ff1}.init_state_fwd;    SBJ_keep{1,ff1}.init_state_sarsa=SBJ{1,ff1}.init_state_sarsa;
-    %     end
-    %     SBJ=SBJ_keep;
     % [1] model optimization
     mode.out=1;
     myFunc_bu = @(x) eval_ArbitrationRL3(x, SBJ, mode); % define a new anonymous function : eval_ArbitrationRL2(x, SBJ_test, mode) for full BayesArb
