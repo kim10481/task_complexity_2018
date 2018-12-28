@@ -5,6 +5,7 @@ Simulation code for the computational model of arbitration and fMRI results
 This will generate a file for each subject in modelRLsource/result_simul. Every simulation file(.mat) contains SBJ structure variable. SBJ{1, 1}.model_BayesArb.param is the optimized free parameters, and SBJ{1, 1}.model_BayesArb.val is sum of negative log likelihood for each subject. 
 
 -Model fitting
+
  Negative log likelihood is calculated for each action, through softmax function with action value (Q). Free parameters are optimized to minimize the sum of negative log likelihood (which means better estimation of human actions) using Nelder-Mead simplex algorithm. For more details, please refer to the supplementary document of Lee et al. (Neuron, 2014). Especially, "Parameter Estimation" section in supplementary methods explains detailed methods.
 
 The sum of negative log likelihood further used to calculate BIC and model comparison (RFX BMS).
