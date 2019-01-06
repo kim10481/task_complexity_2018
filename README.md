@@ -14,3 +14,6 @@ The sum of negative log likelihood further used to calculate BIC and model compa
 
 
 [2] Group effect fMRI results : ./group_effect_fmri
+
+[3] Task files : ./task_complexity 
+To perform an experiment, you must install psychtoolbox first. After the installation, run SIMUL_main.m line-by-line. 
