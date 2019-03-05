@@ -61,7 +61,7 @@ if(job_opt.option_optimizing_model==0)    % each
     LIST_ITER=[1:1:length(sbj_included)];
 end
 if(job_opt.option_optimizing_model==1)    % batch
-    job_opt.post_filetext=['_batch_exp_' sprintf('%d%d',job_opt.experience_sbj_events(1),job_opt.experience_sbj_events(2)) post_filetext];
+    job_opt.post_filetext=['_each_exp_' sprintf('%d%d',job_opt.experience_sbj_events(1),job_opt.experience_sbj_events(2)) post_filetext];
     LIST_ITER=[1:1:1];
 end
 
@@ -377,45 +377,47 @@ if(option_optimizing_model==0)
     end
     %     option_optimizing_model=2; % and then write regressors to SBJ structure based on this optimized parameter
 end
-
 if(option_optimizing_model==1)
+    
+    
+    SBJrecon = cell(1,length(sbj_included));
+    % ## (way2-batch) optimizing for *all* subjects and plug the result into each SBJ structure
+    % [0] retrieve intial configuration for skipping pre-training
+    %     SBJ_keep=SBJ;
+    %     load_file_name=['SBJ_structure(backup,batch,Oct30_4).mat'];
+    %     eval(['load ' save_path_result load_file_name]);
+    %     for ff1=1:1:length(SBJ_keep)
+    %         SBJ_keep{1,ff1}.init_state_fwd=SBJ{1,ff1}.init_state_fwd;    SBJ_keep{1,ff1}.init_state_sarsa=SBJ{1,ff1}.init_state_sarsa;
+    %     end
+    %     SBJ=SBJ_keep;
     % [1] model optimization
-    mode.out=1;
-    myFunc_bu = @(x) eval_ArbitrationRL3(x, SBJ, mode); % define a new anonymous function : eval_ArbitrationRL2(x, SBJ_test, mode) for full BayesArb
-    bunch=[5 20 40 60 mode.max_iter];
-    for mm=[1:1:length(bunch)-1] % split optimization into bunch and save everytime
-        max_iter_current=bunch(mm+1)-bunch(mm);
-        [model_BayesArb.param, model_BayesArb.val]=fminsearchbnd(myFunc_bu, param_init, param_BoundL, param_BoundU, optimset('Display','iter','MaxIter',max_iter_current));   % X0,LB,UB
-        param_init=model_BayesArb.param;
-        % [2-1] add regressor vector to SBJ
-        mode.out=99;
-        SBJ=eval_ArbitrationRL3(model_BayesArb.param,SBJ,mode); % : eval_ArbitrationRL2(x, SBJ_test, mode) for full BayesArb
-        % [3] save
-        model_BayesArb.mode=mode;
-        for ind_sbj=1:1:size(SBJ,2) % plug in a identical parameter (because this is batch)
-            SBJ{1,ind_sbj}.model_BayesArb=model_BayesArb;
-        end
-        save_file_name=['SBJ_structure' job_opt.post_filetext '.mat'];
-        if(Is_save_files_local==1)
-            eval(['save ' save_path_result save_file_name ' SBJ'])
-        end
-        if(Is_save_files_cluster==1)
-            eval(['save ' save_path_result save_file_name ' SBJ'])
-        end
+    mode.out = 99;
+    for m = 1 : length(sbj_included)
+        load_filename = ['SBJ_structure' sprintf('_sbj%02d',sbj_included(m)) job_opt.post_filetext];
+        load(['modelRLsource/result_simul/' load_filename]);
+        SBJrecon{1,m}=SBJ{1,1};
+        
     end
     option_optimizing_model=2; % and then write regressors to SBJ structure based on this optimized parameter
+    SBJ= SBJrecon;
+    save_file_name=['SBJ_structure' job_opt.post_filetext '.mat'];
+    eval(['save ' save_path_result save_file_name ' SBJ']);
+    eval(['save ' save_path_result 'SBJ_structure.mat' ' SBJ']);
 end
+
+
+
 
 if(option_optimizing_model==2) % [NOTE] replace initial SBJ = just read SBJ from the "SBJ_structure.mat"
     load_file_name=['SBJ_structure.mat'];
     eval(['load ' save_path_result load_file_name])
     % regressor part deleting and regenerating.
-    for ff=1:1:length(list_sbj_included)
-        disp(sprintf('- writing regressor to SBJ structure (SBJ%02d)...',list_sbj_included(ff)));
+    for ff=1:1:length(sbj_included)
+        disp(sprintf('- writing regressor to SBJ structure (SBJ%02d)...',sbj_included(ff)));
         % find my subject in "SBJ" strucure of the 'SBJ_structure.mat' file
         did_find=0;
         for ss=1:1:size(SBJ,2)
-            if(strcmp(SBJ{1,ss}.name,LIST_SBJ_included{1,ff})==1)
+            if(strcmp(SBJ{1,ss}.name,job_opt.LIST_SBJ{1,ff})==1)
                 SBJ0{1,1}=SBJ{1,ss}; % SBJ : this includes SBJ structure for subjects to be included for this code
                 did_find=did_find+1;
             end
@@ -426,8 +428,10 @@ if(option_optimizing_model==2) % [NOTE] replace initial SBJ = just read SBJ from
             SBJ0{1,1}=rmfield(SBJ0{1,1},'regressor'); %remove the regressor field
         end
         mode.out=99;
+        mode.rvs=rvs;
+        mode.ori=ori;
         model_BayesArb.param=SBJ0{1,1}.model_BayesArb.param;
-        SBJ0=eval_ArbitrationRL3(model_BayesArb.param,SBJ0,mode); % refresh and add the regressor part : eval_ArbitrationRL2(x, SBJ_test, mode) for full BayesArb
+        SBJ0=eval_ArbitrationRL5_tauonpsa(model_BayesArb.param,SBJ0,mode); %: eval_ArbitrationRL2(x, SBJ_test, mode) for full BayesArb
         SBJ1{1,ff}=SBJ0{1,1};
     end
     clear SBJ
